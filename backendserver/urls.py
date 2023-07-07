@@ -20,4 +20,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('helloworld.urls')),
     path('api/', include('youtube_api.urls')),
+    path('api/', include('chat.urls')),
 ]

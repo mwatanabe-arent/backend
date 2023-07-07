@@ -46,6 +46,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'youtube_api',    
     'helloworld',
+    'chat',
+
+    'common',
 ]
 
 MIDDLEWARE = [

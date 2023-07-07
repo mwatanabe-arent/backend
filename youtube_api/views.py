@@ -19,12 +19,20 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.chains import RetrievalQA
 
+import json
+
 class YouTubeDataAPIView(APIView):
     def get(self, request):
         video_data = self.get_trend_youtube()
-        comment_long_text = self.get_comment_merged(video_data['id'])
-        print(comment_long_text)
-        comment_youyaku = self.generate_embedding(comment_long_text)
+
+        comment_count = video_data['statistics'].get('commentCount', 'Not available')
+        print(comment_count)
+        if(0<int(comment_count)) :
+            comment_long_text = self.get_comment_merged(video_data['id'])
+            print(comment_long_text)
+            comment_youyaku = self.generate_embedding(comment_long_text)
+        else:
+            comment_youyaku = "コメントはありません"
 
         res = self.message_response(f"""あなたはYoutubeの動画をたのしく紹介する人です。次のYoutubeの内容を動画のコメントと合わせて楽しく紹介してください。
                         Title: {video_data['snippet']['title']}
@@ -33,7 +41,7 @@ class YouTubeDataAPIView(APIView):
 
         json_string = """
 {
-    "questions" : ["質問文1","質問文2","質問文3"]
+    "question" : ["質問文1","質問文2","質問文3"]
 }
 """
 
@@ -54,7 +62,14 @@ class YouTubeDataAPIView(APIView):
         answer = response["choices"][0]["message"]["content"]
         print(answer)
 
-        return Response(res)
+        retdata = {
+            "message":res,
+            "question_json":answer
+        }
+        # 辞書をJSON形式の文字列に変換する
+        #json_data = json.dumps(retdata,ensure_ascii=False)
+
+        return Response(retdata)
     
 
     # 一つだけ返す
@@ -144,6 +159,7 @@ class YouTubeDataAPIView(APIView):
         # 出力イメージ
         # ====================================================================================
         # 出力
+        result = result.strip()
         print(result)
 
         return result
