@@ -189,7 +189,7 @@ class YouTubeDataAPIView(APIView):
                 'part': 'snippet',
                 'videoId': video_id,
                 'textFormat': 'plaintext',
-                'maxResults': 10 if parent_id else 100,
+                'maxResults': 10 if parent_id else 11,
                 'pageToken': next_page_token,
                 'order': 'relevance',  
             }
