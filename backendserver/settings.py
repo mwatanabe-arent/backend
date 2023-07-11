@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'youtube_api',    
     'helloworld',
     'chat',
-
+    'hatebu',
+    
     'common',
 ]
 

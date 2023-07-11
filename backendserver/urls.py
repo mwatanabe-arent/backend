@@ -21,4 +21,5 @@ urlpatterns = [
     path('api/', include('helloworld.urls')),
     path('api/', include('youtube_api.urls')),
     path('api/', include('chat.urls')),
+    path('api/', include('hatebu.urls')),
 ]
