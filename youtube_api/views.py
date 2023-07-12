@@ -1,3 +1,12 @@
+import json
+import random
+from langchain.chains import RetrievalQA
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import Chroma
+from langchain.memory import ConversationBufferWindowMemory
+from langchain import LLMChain, PromptTemplate
+from langchain.llms import OpenAI
 from django.shortcuts import render
 
 # Create your views here.
@@ -10,24 +19,15 @@ import requests
 import openai
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
-from langchain.llms import OpenAI
-from langchain import LLMChain, PromptTemplate
-from langchain.memory import ConversationBufferWindowMemory
-
-from langchain.vectorstores import Chroma
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.chains import RetrievalQA
-
-import json
 
 class YouTubeDataAPIView(APIView):
     def get(self, request):
         video_data = self.get_trend_youtube()
 
-        comment_count = video_data['statistics'].get('commentCount', 'Not available')
+        comment_count = video_data['statistics'].get(
+            'commentCount', 'Not available')
         print(comment_count)
-        if(0<int(comment_count)) :
+        if (0 < int(comment_count)):
             comment_long_text = self.get_comment_merged(video_data['id'])
             print(comment_long_text)
             comment_youyaku = self.generate_embedding(comment_long_text)
@@ -45,7 +45,6 @@ class YouTubeDataAPIView(APIView):
 }
 """
 
-
         sform = f"""
             次のメッセージから質問文を３つ作成してください。
             データのフォーマットはjsonデータ形式で返してください
@@ -56,23 +55,23 @@ class YouTubeDataAPIView(APIView):
         print(sform)
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[{"role":"user","content":f"{sform}"}],
+            messages=[{"role": "user", "content": f"{sform}"}],
         )
         print("-----------質問文-----------")
         answer = response["choices"][0]["message"]["content"]
         print(answer)
 
         retdata = {
-            "message":res,
-            "question_json":answer
+            "message": res,
+            "question_json": answer
         }
         # 辞書をJSON形式の文字列に変換する
-        #json_data = json.dumps(retdata,ensure_ascii=False)
+        # json_data = json.dumps(retdata,ensure_ascii=False)
 
         return Response(retdata)
-    
 
     # 一つだけ返す
+
     def get_trend_youtube(self):
 
         # APIキーを設定します。
@@ -81,7 +80,7 @@ class YouTubeDataAPIView(APIView):
         YOUTUBE_API_VERSION = "v3"
 
         youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
-        developerKey=DEVELOPER_KEY)
+                        developerKey=DEVELOPER_KEY)
         # トレンドビデオを検索します。
         search_response = youtube.videos().list(
             part='snippet,contentDetails,statistics',
@@ -90,21 +89,19 @@ class YouTubeDataAPIView(APIView):
             maxResults=10,  # 最大50件の結果を取得
         ).execute()
 
-        for search_result in search_response.get("items", []):
-            print(f"Title: {search_result['snippet']['title']}")
-            print(f"Description: {search_result['snippet']['description']}")
-            print(f"Video Id: {search_result['id']}")
-            print(f"View Count: {search_result['statistics']['viewCount']}")
-            print(f"Like Count: {search_result['statistics'].get('likeCount', 'Not available')}")
-            print(f"Dislike Count: {search_result['statistics'].get('dislikeCount', 'Not available')}")
-            print(f"Comment Count: {search_result['statistics'].get('commentCount', 'Not available')}")
-            print("\n")
-            return search_result
-        
+        # search_response.get("items", []) の結果が配列であると仮定しています
+        items = search_response.get("items", [])
 
+        # 配列が空でない場合にランダムに要素を取得します
+        if items:
+            random_item = random.choice(items)
+            print(random_item)
+            return random_item
+        else:
+            print("配列が空です")
+            return None
 
-
-    def message_response(self,message):
+    def message_response(self, message):
         template = \
             """
             あなたは人間と会話するAIです。
@@ -114,40 +111,40 @@ class YouTubeDataAPIView(APIView):
             """
         # プロンプトテンプレート
         prompt_template = PromptTemplate(
-                                input_variables   = ["history", "input"],  # 入力変数
-                                template          = template,              # テンプレート
-                                validate_template = True,                  # 入力変数とテンプレートの検証有無
-                            )
+            input_variables=["history", "input"],  # 入力変数
+            template=template,              # テンプレート
+            validate_template=True,                  # 入力変数とテンプレートの検証有無
+        )
         # ====================================================================================
         # LLM作成
         # ====================================================================================
         LLM = OpenAI(
-                    model_name        = "text-davinci-003", # OpenAIモデル名
-                    temperature       = 0,                  # 出力する単語のランダム性（0から2の範囲） 0であれば毎回返答内容固定
-                    n                 = 1,                  # いくつの返答を生成するか
-                    )
+            model_name="text-davinci-003",  # OpenAIモデル名
+            temperature=0,                  # 出力する単語のランダム性（0から2の範囲） 0であれば毎回返答内容固定
+            n=1,                  # いくつの返答を生成するか
+        )
         # ====================================================================================
         # メモリ作成
         # ====================================================================================
         # メモリオブジェクト
         memory = ConversationBufferWindowMemory(
-                                        input_key       = None,      # 入力キー該当の項目名
-                                        output_key      = None,      # 出力キー該当の項目名
-                                        memory_key      = 'history', # メモリキー該当の項目名
-                                        return_messages = True,      # メッセージ履歴をリスト形式での取得有無
-                                        human_prefix    = 'Human',   # ユーザーメッセージの接頭辞
-                                        ai_prefix       = 'AI',      # AIメッセージの接頭辞
-                                        )
+            input_key=None,      # 入力キー該当の項目名
+            output_key=None,      # 出力キー該当の項目名
+            memory_key='history',  # メモリキー該当の項目名
+            return_messages=True,      # メッセージ履歴をリスト形式での取得有無
+            human_prefix='Human',   # ユーザーメッセージの接頭辞
+            ai_prefix='AI',      # AIメッセージの接頭辞
+        )
         # ====================================================================================
         # LLM Chain作成
         # ====================================================================================
         # LLM Chain
         chain = LLMChain(
-                        llm     = LLM,             # LLMモデル
-                        prompt  = prompt_template, # プロンプトテンプレート
-                        verbose = True,            # プロンプトを表示するか否か
-                        memory  = memory,          # メモリ
-                        )
+            llm=LLM,             # LLMモデル
+            prompt=prompt_template,  # プロンプトテンプレート
+            verbose=True,            # プロンプトを表示するか否か
+            memory=memory,          # メモリ
+        )
         # ====================================================================================
         # モデル実行
         # ====================================================================================
@@ -164,14 +161,13 @@ class YouTubeDataAPIView(APIView):
 
         return result
 
-    def generate_question(self,message):
+    def generate_question(self, message):
 
         return ""
 
-        
-
-    def get_comment_merged(self,video_id):
+    def get_comment_merged(self, video_id):
         URL = 'https://www.googleapis.com/youtube/v3/'
+
         def get_comments(url, params):
             response = requests.get(url, params=params)
 
@@ -181,6 +177,7 @@ class YouTubeDataAPIView(APIView):
                 return None
 
             return response.json()
+
         def print_comments(no, video_id, parent_id=None, cno=None, next_page_token=None):
 
             result = ""
@@ -191,7 +188,7 @@ class YouTubeDataAPIView(APIView):
                 'textFormat': 'plaintext',
                 'maxResults': 10 if parent_id else 11,
                 'pageToken': next_page_token,
-                'order': 'relevance',  
+                'order': 'relevance',
             }
 
             if parent_id:
@@ -209,8 +206,9 @@ class YouTubeDataAPIView(APIView):
                     text = comment_info['snippet']['textDisplay']
                     like_cnt = comment_info['snippet']['likeCount']
                     user_name = comment_info['snippet']['authorDisplayName']
-                    #print('{:0=4}-{:0=3}\t{}\t{}\t{}'.format(no, cno, text.replace('\r', '\n').replace('\n', ' '), like_cnt, user_name))
-                    print('{}\t{}\t{}'.format( text.replace('\r', '\n').replace('\n', ' '), like_cnt, user_name))
+                    # print('{:0=4}-{:0=3}\t{}\t{}\t{}'.format(no, cno, text.replace('\r', '\n').replace('\n', ' '), like_cnt, user_name))
+                    print('{}\t{}\t{}'.format(text.replace(
+                        '\r', '\n').replace('\n', ' '), like_cnt, user_name))
                     cno += 1
                 else:
                     # If parent_id is not specified, it means it is a top-level comment.
@@ -219,28 +217,29 @@ class YouTubeDataAPIView(APIView):
                     reply_cnt = comment_info['snippet']['totalReplyCount']
                     user_name = comment_info['snippet']['topLevelComment']['snippet']['authorDisplayName']
                     parentId = comment_info['snippet']['topLevelComment']['id']
-                    #print('{:0=4}\t{}\t{}\t{}\t{}'.format(no, text.replace('\r', '\n').replace('\n', ' '), like_cnt, user_name, reply_cnt))
-                    #print('{}\t{}\t{}\t{}'.format( text.replace('\r', '\n').replace('\n', ' '), like_cnt, user_name, reply_cnt))
-                    comment_msg = '{}'.format( text.replace('\r', '\n').replace('\n', ' '))
+                    # print('{:0=4}\t{}\t{}\t{}\t{}'.format(no, text.replace('\r', '\n').replace('\n', ' '), like_cnt, user_name, reply_cnt))
+                    # print('{}\t{}\t{}\t{}'.format( text.replace('\r', '\n').replace('\n', ' '), like_cnt, user_name, reply_cnt))
+                    comment_msg = '{}'.format(
+                        text.replace('\r', '\n').replace('\n', ' '))
                     print(comment_msg)
                     result += comment_msg + "\n"
 
                     if reply_cnt > 0:
                         cno = 1
-                        #print_comments(no, video_id, parentId, cno)
+                        # print_comments(no, video_id, parentId, cno)
                     no += 1
             return result
-       
+
         no = 1
         merged_msg = print_comments(no, video_id)
         return merged_msg
 
-    def generate_embedding(self,long_text):
+    def generate_embedding(self, long_text):
         text_splitter = CharacterTextSplitter(
-            separator = "\n",
-            chunk_size = 100,
-            chunk_overlap = 0,
-            length_function = len,
+            separator="\n",
+            chunk_size=100,
+            chunk_overlap=0,
+            length_function=len,
         )
         document_list = text_splitter.create_documents([long_text])
         # エンベッディングの初期化
@@ -248,13 +247,13 @@ class YouTubeDataAPIView(APIView):
         # ベクターストアにドキュメントとエンベッディングを格納
         db = Chroma.from_documents(document_list, embeddings)
         retriever = db.as_retriever()
-        llm = OpenAI(model_name="text-davinci-003", temperature=0, max_tokens=1000)
+        llm = OpenAI(model_name="text-davinci-003",
+                     temperature=0, max_tokens=1000)
 
         # チェーンを作り、それを使って質問に答える
-        qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever)
+        qa = RetrievalQA.from_chain_type(
+            llm=llm, chain_type="stuff", retriever=retriever)
 
         query = "コメントではどのような意見が多いですか？500文字以内で答えてください"
         answer = qa.run(query)
         return answer
-    
-
