@@ -34,7 +34,7 @@ class YouTubeDataAPIView(APIView):
         else:
             comment_youyaku = "コメントはありません"
 
-        res = self.message_response(f"""あなたはYoutubeの動画をたのしく紹介する人です。次のYoutubeの内容を動画のコメントと合わせて楽しく紹介してください。
+        res = self.message_response(f"""あなたはYoutubeの動画をたのしく紹介する人です。はじめに何の動画の紹介なのかを明示して、次のYoutubeの内容を動画のコメントと合わせて楽しく紹介してください。
                         Title: {video_data['snippet']['title']}
                         コメントの反応: {comment_youyaku} """)
 #                        Description: {video_data['snippet']['description']}
