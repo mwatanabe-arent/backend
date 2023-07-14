@@ -13,14 +13,10 @@
     <table>
         <tr>
             <th>Title</th>
-            <th>Link</th>
-            <th>Category</th>
         </tr>
         {% for string in my_strings %}
         <tr>
-            <td>{{ string.title }}</td>
-            <td><a href="{{ string.link }}">{{ string.link }}</a></td>
-            <td>{{ string.category }}</td>
+            <td><a href="{{ string.link }}">{{ string.title }}</a></td>
         </tr>
         {% endfor %}
     </table>
