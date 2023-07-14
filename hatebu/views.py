@@ -104,8 +104,10 @@ class URL(APIView):
 
         # web_summaryをJsonの文字列に渡すために変換
         # web_summary = json.dumps(web_summary, ensure_ascii=False, indent=4)
-        # web_summary = web_summary.response
+        web_summary = web_summary.response
         # web_summary = web_summary.encode('ascii', 'ignore').decode('ascii')
+
+        web_summary = web_summary.strip()
 
         retdata = {
             "message": web_summary,
@@ -155,14 +157,22 @@ class URL(APIView):
         )
         '''
 
+        '''     
         template = """ 
         このデータの要約を{num}個作成してください。
         それぞれの要約は日本語で100文字以上200文字以内で作成してください。　
         また、要約には{action}を入れてください。　
         """
+        '''
+        template = """ 
+        - 返答内容に対する指示
+        -- Enbeddingされたデータの要約を作成してください
+        -- それぞれの要約は日本語で100文字以上200文字以内で作成してください。
+        -- {action}
+        """
 
         prompt = PromptTemplate(
-            input_variables=["num", "action"],
+            input_variables=["action"],
             template=template,
         )
 
@@ -181,12 +191,20 @@ class URL(APIView):
         documents = BeautifulSoupWebReader().load_data(urls=[url])
         index = GPTVectorStoreIndex.from_documents(
             documents,  service_context=service_context)
-        query_engine = index.as_query_engine(service_context=service_context)
-        chat_engine = index.as_chat_engine(service_context=service_context)
+        # query_engine = index.as_query_engine(service_context=service_context)
+        chat_engine = index.as_chat_engine(
+            verbose=True, service_context=service_context)
 
-        answer = query_engine.query(prompt.format(num=3, action="Webページの要約"))
+        # answer = query_engine.query(prompt.format(action=""))
+        answer = chat_engine.chat(
+            f"""
+            内容を要約してください 。要約は200文字以内で作成してください。
+            """)
+
         print("query要約")
         print(answer)
+
+        return answer
         '''
         answer = chat_engine.chat(
             f"""
