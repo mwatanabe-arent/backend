@@ -44,11 +44,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
-    'youtube_api',    
+    'youtube_api',
     'helloworld',
     'chat',
     'hatebu',
-    
+
     'common',
 ]
 

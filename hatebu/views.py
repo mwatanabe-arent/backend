@@ -22,6 +22,54 @@ from langchain.memory import ConversationBufferWindowMemory
 from common.utils import make_questions
 
 
+def get_hatebu_top_json():
+    url = "https://b.hatena.ne.jp/"
+    response = requests.get(url)
+    html_content = response.text
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    h3_elements = soup.find_all('h3', class_='entrylist-contents-title')
+    temp_a_tag = []
+
+    for h3_element in h3_elements:
+        # <a>タグを取得
+        a_tag = h3_element.find('a')
+
+        if a_tag:
+            # テキストとリンクを取得
+            text = a_tag.text.strip().replace('\n', '')
+            link = a_tag['href'].replace('\n', '')
+            category = a_tag['data-entry-category'].replace('\n', '')
+
+            entry = {
+                "title": text,
+                "link": link,
+                "category": category,
+            }
+
+            # a_tagの中の要素を配列に入れ直す
+            temp_a_tag.append(entry)
+
+    # データをJSON形式に変換
+    # json_data = json.dumps(temp_a_tag, ensure_ascii=False, indent=4)
+
+    # JSONデータを表示
+    # print(json_data)
+
+    return temp_a_tag
+
+
+class TopicList(APIView):
+    def get(self, request):
+        print("get")
+
+        hatebu_headline = get_hatebu_top_json()
+
+        print(hatebu_headline[0]['title'])
+        # return JsonResponse({'message': hatebu_headline['title']})
+        return render(request, 'my_template.html', {'my_strings': hatebu_headline})
+
+
 class Topics(APIView):
     def get(self, request):
 

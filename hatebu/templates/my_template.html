@@ -1,0 +1,30 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>My Strings</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
+
+</head>
+
+<body>
+    <h1>My Strings</h1>
+    <table>
+        <tr>
+            <th>Title</th>
+            <th>Link</th>
+            <th>Category</th>
+        </tr>
+        {% for string in my_strings %}
+        <tr>
+            <td>{{ string.title }}</td>
+            <td><a href="{{ string.link }}">{{ string.link }}</a></td>
+            <td>{{ string.category }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</body>
+
+</html>
