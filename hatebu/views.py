@@ -253,6 +253,37 @@ class URL(APIView):
         print(answer)
 
         return answer
+    
+    def web_summary_title(self, url , title):
+
+        # define LLM
+        max_input_size = 4096
+        num_output = 2048  # 2048に拡大
+        prompt_helper = PromptHelper(max_input_size, num_output)
+
+        llm_predictor = LLMPredictor(
+            llm=OpenAI(temperature=0, max_tokens=2048))
+        service_context = ServiceContext.from_defaults(
+            llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+
+        documents = BeautifulSoupWebReader().load_data(urls=[url])
+        index = GPTVectorStoreIndex.from_documents(
+            documents,  service_context=service_context)
+        chat_engine = index.as_chat_engine(
+            verbose=True, service_context=service_context)
+
+        answer = chat_engine.chat(
+            f"""
+            {title}について要約してください 。要約は200文字以内で作成してください。出力は日本語で行ってください
+            """)
+
+        print("query要約")
+        print(answer)
+
+        return answer
+
+
+
         '''
         answer = chat_engine.chat(
             f"""
@@ -331,3 +362,40 @@ class URL(APIView):
         print(result)
 
         return result
+
+
+class sandbox(APIView):
+    def get(self, request):
+
+        hatebu_headline = get_hatebu_top_json()
+
+        url_instance = URL()
+
+        temp = random.sample(hatebu_headline, 1)
+
+        print(temp[0]['title'])
+
+        summary_topic = {}  # 空の辞書を作成して変数を定義する
+        summary_topic["title"] = temp[0]['title']
+        summary_topic["link"] = temp[0]['link']
+
+
+        #summary_topic["title"] = "VUCAの時代とは？時代に取り残されないビジネスパーソンに必要な4つの行動習慣 - ミーツキャリア（MEETS CAREER）"
+        #summary_topic["link"] = "https://meetscareer.tenshoku.mynavi.jp/entry/20230718_vuca"
+
+        summary_topic["result"] = url_instance.web_summary_title(summary_topic['link'], summary_topic['title'])
+        summary_topic["moji"] = "もじ２"
+
+        context = {
+            'summary_topic': summary_topic
+        }
+
+        '''
+        context = {
+            "message": answer,
+        }
+        '''
+
+        return render(request, 'sandbox.html', context)
+
+
