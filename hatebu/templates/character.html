@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>sandbox</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
+
+</head>
+
+<body>
+    <h1>sandbox</h1>
+    <table>
+        <tr>
+            <th>返答</th>
+            <th>原文</th>
+            <th>プロンプト</th>
+        </tr>
+        <tr>
+            <td>{{ data.response }} </td>
+            <td>{{ data.input }} </td>
+            <td>{{ data.prompt }} </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

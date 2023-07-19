@@ -1,3 +1,14 @@
+from django.core.exceptions import ObjectDoesNotExist
+from chat.models import BodyText
+from langchain.schema import messages_to_dict
+from langchain.chat_models import ChatOpenAI
+from langchain.chains import ConversationChain
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
 from email.quoprimime import unquote
 from urllib.parse import unquote
 import json
@@ -12,7 +23,7 @@ import requests
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from langchain import LLMChain, PromptTemplate
+from langchain import ConversationChain, LLMChain, PromptTemplate
 from llama_index import LLMPredictor, ServiceContext, PromptHelper
 from langchain import OpenAI
 from llama_index import GPTVectorStoreIndex
@@ -253,8 +264,8 @@ class URL(APIView):
         print(answer)
 
         return answer
-    
-    def web_summary_title(self, url , title):
+
+    def web_summary_title(self, url, title):
 
         # define LLM
         max_input_size = 4096
@@ -281,8 +292,6 @@ class URL(APIView):
         print(answer)
 
         return answer
-
-
 
         '''
         answer = chat_engine.chat(
@@ -379,11 +388,11 @@ class sandbox(APIView):
         summary_topic["title"] = temp[0]['title']
         summary_topic["link"] = temp[0]['link']
 
+        # summary_topic["title"] = "VUCAの時代とは？時代に取り残されないビジネスパーソンに必要な4つの行動習慣 - ミーツキャリア（MEETS CAREER）"
+        # summary_topic["link"] = "https://meetscareer.tenshoku.mynavi.jp/entry/20230718_vuca"
 
-        #summary_topic["title"] = "VUCAの時代とは？時代に取り残されないビジネスパーソンに必要な4つの行動習慣 - ミーツキャリア（MEETS CAREER）"
-        #summary_topic["link"] = "https://meetscareer.tenshoku.mynavi.jp/entry/20230718_vuca"
-
-        summary_topic["result"] = url_instance.web_summary_title(summary_topic['link'], summary_topic['title'])
+        summary_topic["result"] = url_instance.web_summary_title(
+            summary_topic['link'], summary_topic['title'])
         summary_topic["moji"] = "もじ２"
 
         context = {
@@ -399,3 +408,146 @@ class sandbox(APIView):
         return render(request, 'sandbox.html', context)
 
 
+class character(APIView):
+    def get(self, request):
+
+        topic_str_array = []
+        topic_str_array.append("紙屋研究所の記事では、宮崎駿の最後の作品である映画「君たちはどう生きるか」を評価しています。記事では、「風立ちぬ」が「人間はそれぞれの時代を、力を尽くして生きている」として、「全体には美しい映画をつくろうと思う」という意図を貫いた映画となったが、零戦を開発したという戦争の負の側面は糾弾されることもなく、あるいは何か昇華されることもなく、ただ不問に付されて終わってしまったと指摘しています。さらに、宮崎駿の最後の作品が「風立ちぬ」であることを残念に思うという結論付けに加え、「君たちはどう生きるか」は、宮崎駿の最後の作品として、人間が時代に向かって力を尽くして生きることを示した美しい映画であると評価しています。")
+        topic_str_array.append(
+            "Yuma Yamashitaさんは、荻窪での幾多の出会いが、彼を写真家の世界へ導いてくれたということをSUUMOタウンで綴りました。父から「荻窪に家を借りてみないか」と声をかけられ、7年間荻窪で暮らした彼は、20代の中ごろにモラトリアムの状態にあり、カナダへ留学した後、地元の千葉で就職したものの、数カ月で退職し、何度も転職を繰り返していました。荻窪での出会いは、彼を写真家の世界へ導いてくれました。")
+        topic_str_array.append(
+            "OpenAIのChatGPT APIのFunction callingを使うことで、請求書の構造化データを抽出することができます。gihyo.jpは、プログラミング技術を学ぶためのオンラインサービスで、プログラミング言語やフレームワーク、データベースなどの技術情報を提供しています。また、プログラミングに関する書籍や動画なども提供しています。")
+        topic_str_array.append(
+            "状態遷移図とは、ある状態から別の状態への遷移を視覚的に表現した図であり、仕様書で規定していない想定外の操作や無意味な操作も把握できないという点で重要である。次回は「状態遷移図」の兄弟分である「状態遷移表」をご紹介する予定である。")
+        topic_str_array.append("お笑いライブは全国各地で開催されており、毎日いくつものライブが開催されています。お笑いライブを楽しむためには、まずは開催されている劇場を探し出し、ライブの種類を確認し、チケットを購入する必要があります。チケットの購入方法は、インターネットでの購入や、劇場での購入などがあります。また、持ち物や注意点などもあるので、その点も把握しておく必要があります。お笑いライブを楽しむためには、開催されている劇場を探し出し、ライブの種類を確認し、チケットを購入する必要があります。チケットの購入方法は、インターネットでの購入や、劇場での購入などがあります。持ち物や注意点などもあるので、その点も把握しておく必要があります。")
+        topic_str_array.append(
+            "朝のトーストには、ラタトゥイユとチーズをのせて焼く、キーマカレーをのせたトースト、バナナとシナモンをのせたトースト、マシュマロパンなどをのせてもおいしいなど、様々な種類があります。お題「朝ごはん」のエントリーを参考に、自分なりの朝のトーストを作ってみてはいかがでしょうか？例えば、兄妹げんかの原因となるマシュマロパンをのせたトーストなど、楽しいアイデアを試してみるのも良いでしょう。")
+        topic_str_array.append("月記は、『君たちはどう生きるか』という映画の感想を書いたブログです。映像的には面白かったという感想を書いています。特に父と後妻に馴染めない真人の細かい芝居が良かったと書いています。キリコさんも魅力的だったと書いていますが、夏子さんを「お母さん」と呼んだところに納得感がなかったと書いています。月記は、『君たちはどう生きるか』を読んで変わったという他人の感想を書いています。月記は、映画『君たちはどう生きるか』の感想を書いたブログで、映像的には面白かったという感想を書いています。キリコさんや夏子さんについても詳しく書いていますが、納得感がなかったという意見も書いています。")
+
+        topic_str = random.choice(topic_str_array)
+
+        print("get")
+        # message = request.GET.get('message')
+        message = "その中で一番小さいボールはなんですか？"
+        message = topic_str
+
+        # ChatOpenAIクラスのインスタンスを作成、temperatureは0.7を指定
+        chat = ChatOpenAI(temperature=0.7)
+
+        # 会話の履歴を保持するためのオブジェクト
+        memory = ConversationBufferWindowMemory(return_messages=True, k=3)
+        # もとmemory.json
+
+        # 特定のIDのモデルを取得します。
+
+        try:
+            instance = BodyText.objects.get(id=1)  # 1はサンプルのIDです
+
+            saved_memory = json.loads(instance.body)
+            for i in range(0, len(saved_memory), 2):
+                human_item = saved_memory[i]
+                ai_item = saved_memory[i+1]
+                # print('Human input:', human_item['data']['content'])
+                # print('AI output:', ai_item['data']['content'])
+
+                memory.save_context(
+                    {'input': human_item['data']['content']},
+                    {'output': ai_item['data']['content']})
+
+        except ObjectDoesNotExist:
+            instance = BodyText()  # 該当のIDが存在しない場合、新たなインスタンスを作成します。
+
+        print(memory.load_memory_variables({}))
+
+        # テンプレートを定義
+        template = """
+あなたはドラゴンボールの主人公、孫悟空のロールプレイをしています。
+チャットボットとして、ユーザーの言うことを、孫悟空になりきってオウム返ししてください。
+
+#孫悟空の性格
+戦闘以外に興味がなく、仕事も長続きせずサボってばかり。お金にも興味はありません。自身の能力を高める修行は大好きです。
+
+#孫悟空の挨拶
+オッス、オラ悟空！
+
+#孫悟空の興味
+自分よりも強い敵に興味があります、それ以外には興味が全くありません。必ず自分よりも強いのかと聞いてきます。
+
+#孫悟空の口癖
+よく使う口癖は次のとおりです。その口癖に合わせた感じで話してください
+オッス、オラ悟空。いっちょやってみっか！。オラ、それ興味ねえぞ。おめえ強いな。面白くなってきたぞ！。オラの元気を分けてくれ！。こいつはやべえぞ。おいチチ、飯はまだか？。やべえ、チチに怒られる！
+
+# 孫悟空の会話の仕方
+孫悟空は長い会話はしません。具体的には50文字以下で話をします。50文字以上の会話はしないでください。
+
+# 孫悟空の語尾
+孫悟空は以下の言葉使いをします。
+てえへんだ！。オラ腹減ったぞ。おめえ、何もんだ？。うんめ〜。オラ、疲れたぞ。亀仙人のじっちゃん。グッバイ、みんな！
+        """
+
+        template = """
+あなたはオウム返しをするチャットボットです。
+自分の言葉として、ユーザーの言葉をオウム返ししてください。
+また、チャットボットの口調は孫悟空として返答してください
+
+#孫悟空の挨拶
+オッス、オラ悟空！
+
+# 孫悟空の語尾
+孫悟空は以下の言葉使いをします。
+てえへんだ！。オラ腹減ったぞ。おめえ、何もんだ？。うんめ〜。オラ、疲れたぞ。亀仙人のじっちゃん。グッバイ、みんな！
+
+返答時の注意点
+- 自分が情報の一次発信者という意識を持ってください
+- 会話を自分から開始するように話を切り出してください
+- 自分から話しかけているという意識を持ってください
+- 話の開始に相槌や、相手の話を聞いた素振りを出さないでください
+- 会話は短く、**50文字以内**で話をしてください
+- すべてを話す必要はなく、冒頭部分と話のきっかけになる部分を話してください
+"""
+
+        # テンプレートを用いてプロンプトを作成
+        prompt = ChatPromptTemplate.from_messages([
+            SystemMessagePromptTemplate.from_template(template),
+            MessagesPlaceholder(variable_name="history"),
+            HumanMessagePromptTemplate.from_template("{input}")
+        ])
+
+        # AIとの会話を管理
+        conversation = ConversationChain(
+            llm=chat, memory=memory, prompt=prompt)
+
+        # ユーザからの入力を受け取り、変数commandに代入
+        command = message
+        response = conversation.predict(input=command)
+        print(response)
+        print(dir(response))
+
+        # memoryオブジェクトから会話の履歴を取得して、変数historyに代入
+        history = memory.chat_memory
+
+        # 会話履歴をJSON形式の文字列に変換、整形して変数messagesに代入
+        messages = json.dumps(messages_to_dict(
+            history.messages), indent=2, ensure_ascii=False)
+
+        # instance.body = messages  # モデルのフィールドに値を代入します。
+        # instance.save()  # データベースに保存します。
+
+        '''
+
+        with open("data.txt", "w", encoding='utf-8') as outfile:
+            outfile.write(messages)
+        '''
+        # return JsonResponse({"message": response})
+        # print(response)
+        # print(dir(response))
+
+        data = {}
+        data["response"] = response
+        data["input"] = topic_str
+        data["prompt"] = template
+
+        context = {
+            'data': data
+        }
+        return render(request, 'character.html', context)
