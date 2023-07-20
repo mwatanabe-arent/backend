@@ -1,3 +1,4 @@
+import os
 from django.core.exceptions import ObjectDoesNotExist
 from chat.models import BodyText
 from langchain.schema import messages_to_dict
@@ -31,6 +32,10 @@ from llama_index.readers import BeautifulSoupWebReader
 from langchain.memory import ConversationBufferWindowMemory
 
 from common.utils import make_questions
+
+# .env ファイルをロードして環境変数へ反映
+from dotenv import load_dotenv
+load_dotenv()
 
 
 def get_hatebu_top_json():
@@ -431,8 +436,14 @@ class character(APIView):
         message = "その中で一番小さいボールはなんですか？"
         message = topic_str
 
+        # print(os.getenv('OPENAI_API_BASE'))
+        # print(os.getenv('OPENAI_API_KEY_AZURE'))
+
         # ChatOpenAIクラスのインスタンスを作成、temperatureは0.7を指定
-        chat = ChatOpenAI(temperature=0.7)
+        llm = ChatOpenAI(
+            openai_api_base=os.getenv('OPENAI_API_BASE'),
+            openai_api_key=os.getenv("OPENAI_API_KEY_AZURE"),
+            model_name='gpt-4', model_kwargs={"deployment_id": "Azure-GPT-4-8k"}, temperature=0)
 
         # 会話の履歴を保持するためのオブジェクト
         memory = ConversationBufferWindowMemory(return_messages=True, k=3)
@@ -515,7 +526,7 @@ class character(APIView):
 
         # AIとの会話を管理
         conversation = ConversationChain(
-            llm=chat, memory=memory, prompt=prompt)
+            llm=llm, memory=memory, prompt=prompt)
 
         # ユーザからの入力を受け取り、変数commandに代入
         command = message

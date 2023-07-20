@@ -6,7 +6,9 @@ from langchain.llms import OpenAI
 import os
 import requests
 import openai
-openai.api_key = os.environ["OPENAI_API_KEY"]
+openai.api_base = os.getenv('OPENAI_API_BASE')
+openai.api_type = os.getenv("OPENAI_API_TYPE")
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 def shared_function():

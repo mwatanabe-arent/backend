@@ -1,3 +1,6 @@
+import openai
+import requests
+import os
 import json
 import random
 from langchain.chains import RetrievalQA
@@ -14,10 +17,13 @@ from googleapiclient.discovery import build
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-import os
-import requests
-import openai
-openai.api_key = os.environ["OPENAI_API_KEY"]
+# .env ファイルをロードして環境変数へ反映
+from dotenv import load_dotenv
+load_dotenv()
+
+openai.api_base = os.getenv('OPENAI_API_BASE')
+openai.api_type = os.getenv("OPENAI_API_TYPE")
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 class YouTubeDataAPIView(APIView):
