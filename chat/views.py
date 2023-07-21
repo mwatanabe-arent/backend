@@ -27,6 +27,10 @@ from chat.models import BodyText
 
 from django.core.exceptions import ObjectDoesNotExist
 
+# .env ファイルをロードして環境変数へ反映
+from dotenv import load_dotenv
+load_dotenv()
+
 
 @require_GET
 def hello(request):
@@ -57,6 +61,10 @@ class Memory(APIView):
 
         # ChatOpenAIクラスのインスタンスを作成、temperatureは0.7を指定
         chat = ChatOpenAI(temperature=0.7)
+        llm = ChatOpenAI(
+            openai_api_base=os.getenv('OPENAI_API_BASE'),
+            openai_api_key=os.getenv("OPENAI_API_KEY_AZURE"),
+            model_name='gpt-4', model_kwargs={"deployment_id": "Azure-GPT-4-8k"}, temperature=0)
 
         # 会話の履歴を保持するためのオブジェクト
         memory = ConversationBufferWindowMemory(return_messages=True, k=3)
@@ -115,7 +123,7 @@ class Memory(APIView):
             history.messages), indent=2, ensure_ascii=False)
 
         instance.body = messages  # モデルのフィールドに値を代入します。
-        # instance.save()  # データベースに保存します。
+        instance.save()  # データベースに保存します。
 
         '''
 
