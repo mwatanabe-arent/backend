@@ -8,6 +8,12 @@ import os
 import requests
 import openai
 
+from dotenv import load_dotenv
+# Load .env file
+load_dotenv()
+
+os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY_AZURE")
+
 
 def shared_function():
     print("shared_function() called")
