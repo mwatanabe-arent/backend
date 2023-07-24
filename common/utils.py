@@ -1,5 +1,9 @@
 
 
+from langchain.schema import messages_to_dict
+from django.core.exceptions import ObjectDoesNotExist
+import json
+import random
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferWindowMemory
 from langchain import LLMChain, PromptTemplate
@@ -9,6 +13,8 @@ import requests
 import openai
 
 from dotenv import load_dotenv
+
+from chat.models import BodyText
 # Load .env file
 load_dotenv()
 
@@ -108,7 +114,7 @@ Settings Start;
 Settings End;
 
 # 会話の方法
-あなたからわたしに話しかけてください。質問をしたり、自分のことをどのくらい知っているかを聞いたりします。様々なバリエーションで楽しい会話をしてください。50文字以内で会話を行なってください
+あなたからわたしに話しかけてください。質問をしたり、自分のことをどのくらい知っているかを聞いたりします。様々なバリエーションで楽しい会話をしてください。140文字以内で会話を行なってください
 
 # 坂本龍馬の概要
 坂本龍馬は、幕末の日本で活躍した政治活動家および武士であり、彼のキャラクター性は日本の歴史において非常に重要です。彼の活動は、日本の近代化と明治維新に大きく寄与しました。
@@ -205,6 +211,28 @@ Settings End;
         human_prefix='Human',   # ユーザーメッセージの接頭辞
         ai_prefix='AI',      # AIメッセージの接頭辞
     )
+
+    # 特定のIDのモデルを取得します。
+
+    try:
+        instance = BodyText.objects.get(id=1)  # 1はサンプルのIDです
+
+        saved_memory = json.loads(instance.body)
+        for i in range(0, len(saved_memory), 2):
+            human_item = saved_memory[i]
+            ai_item = saved_memory[i+1]
+            # print('Human input:', human_item['data']['content'])
+            # print('AI output:', ai_item['data']['content'])
+
+            memory.save_context(
+                {'input': human_item['data']['content']},
+                {'output': ai_item['data']['content']})
+
+    except ObjectDoesNotExist:
+        instance = BodyText()  # 該当のIDが存在しない場合、新たなインスタンスを作成します。
+
+    print(memory.load_memory_variables({}))
+
     # ====================================================================================
     # LLM Chain作成
     # ====================================================================================
@@ -229,10 +257,45 @@ Settings End;
     result = result.strip()
     print(result)
 
+    # memoryオブジェクトから会話の履歴を取得して、変数historyに代入
+    history = memory.chat_memory
+
+    # 会話履歴をJSON形式の文字列に変換、整形して変数messagesに代入
+    messages = json.dumps(messages_to_dict(
+        history.messages), indent=2, ensure_ascii=False)
+
+    instance.body = messages  # モデルのフィールドに値を代入します。
+    instance.save()  # データベースに保存します。
+
     return result
 
 
 def make_questions(base_message):
+
+    question_topick = [
+        "- 相手がどのように感じているかを聞く",
+        "- 地名がを含んだ内容の場合、土佐ではどうだったかを聞く",
+        "- 薩長同盟との比較",
+        "- 時代の変化などについて質問する",
+        "- 龍馬とかかわり合いのあった人物を絡めて質問をする",
+        "- 最も困難だと感じた出来事を絡めて質問する",
+        "- 土佐藩における幼少期の体験を絡めて質問する",
+        "- 明治維新の結果を絡めて質問する",
+        "- あなたが最も尊敬する人物を交えて質問する",
+        "- 土佐藩における生活を交えて質問する",
+        "- 当時の社会の変化について質問する",
+        "- 江戸時代と明治時代の違いについて質問する",
+        "- 土佐藩時代の生活をについて質問する",
+        "- 時代の変化をどのように捉えているか、を含んだ質問をする",
+        "- 若き日のあなたに影響を与えた人物や出来事はを交えて質問する",
+        "- 薩長同盟とあなたの活動の間で共通する点や相違点を含めて質問する",
+        "- 当時の日本の社会や政治の変化に対するあなたの見解を交えて質問する",
+        "- あなたの視点から見た江戸時代と明治時代の主な違いを聞く",
+        "- あなたが直面した最大の挑戦を交えて質問する",
+        "- 明治維新に至った過程や結果についてどのように思うかを考えて質問する",
+    ]
+    selected_strings = random.sample(question_topick, 3)
+    result_string = "\n".join(selected_strings)
 
     json_string = """
 {
@@ -246,17 +309,14 @@ def make_questions(base_message):
 
 メッセージ:{base_message}
 質問には以下の内容を含めながら行う
-- 相手がどのように感じているかを聞く
-- 地名がを含んだ内容の場合、土佐ではどうだったかを聞く
-- 坂本龍馬の生い立ちについて質問する
-- 薩長同盟との比較
-- 時代の変化などについて質問する
+{result_string}
         """
     print(template)
 
     # プロンプトテンプレート
     prompt_template = PromptTemplate(
-        input_variables=["json_string", "base_message"],  # 入力変数
+        input_variables=["json_string",
+                         "base_message", "result_string"],  # 入力変数
         template=template,              # テンプレート
         validate_template=True,                  # 入力変数とテンプレートの検証有無
     )
@@ -275,7 +335,8 @@ def make_questions(base_message):
     # LLM Chain実行
     result = chain.predict(
         base_message=base_message,
-        json_string=json_string)
+        json_string=json_string,
+        result_string=result_string)
 
     print("-----------質問文-----------")
     # questions = response["choices"][0]["message"]["content"]
