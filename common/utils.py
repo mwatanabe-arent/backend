@@ -293,8 +293,15 @@ def make_questions(base_message):
         "- あなたの視点から見た江戸時代と明治時代の主な違いを聞く",
         "- あなたが直面した最大の挑戦を交えて質問する",
         "- 明治維新に至った過程や結果についてどのように思うかを考えて質問する",
+        "- 吉田松陰を含めて質問文を考える",
+        "- 高杉晋作を含めて質問文を考える",
+        "- 西郷隆盛を含めて質問文を考える",
+        "- 岩崎弥太郎を含めて質問文を考える",
+        "- 勝海舟を含めて質問文を考える",
+        "- 中岡慎太郎を含めて質問文を考える",
+        "- お龍を含めて質問文を考える",
     ]
-    selected_strings = random.sample(question_topick, 3)
+    selected_strings = random.sample(question_topick, 5)
     result_string = "\n".join(selected_strings)
 
     json_string = """
