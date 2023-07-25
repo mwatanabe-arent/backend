@@ -88,6 +88,9 @@ class Memory(APIView):
 
         except ObjectDoesNotExist:
             instance = BodyText()  # 該当のIDが存在しない場合、新たなインスタンスを作成します。
+        except json.decoder.JSONDecodeError as e:
+            # JSON文字列が正しくデコードできない場合の例外処理
+            print(f"JSONDecodeError: {e}")
 
         print(memory.load_memory_variables({}))
 
@@ -123,6 +126,9 @@ class Memory(APIView):
             history.messages), indent=2, ensure_ascii=False)
 
         instance.body = messages  # モデルのフィールドに値を代入します。
+
+        print("savesavesave")
+        print(messages)
         instance.save()  # データベースに保存します。
 
         '''

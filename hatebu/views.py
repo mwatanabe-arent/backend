@@ -512,6 +512,9 @@ class character(APIView):
 
         except ObjectDoesNotExist:
             instance = BodyText()  # 該当のIDが存在しない場合、新たなインスタンスを作成します。
+        except json.decoder.JSONDecodeError as e:
+            # JSON文字列が正しくデコードできない場合の例外処理
+            print(f"JSONDecodeError: {e}")
 
         print(memory.load_memory_variables({}))
 

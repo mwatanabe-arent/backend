@@ -1,5 +1,7 @@
 
 
+import tiktoken
+from tiktoken.core import Encoding
 from langchain.schema import messages_to_dict
 from django.core.exceptions import ObjectDoesNotExist
 import json
@@ -230,6 +232,9 @@ Settings End;
 
     except ObjectDoesNotExist:
         instance = BodyText()  # 該当のIDが存在しない場合、新たなインスタンスを作成します。
+    except json.decoder.JSONDecodeError as e:
+        # JSON文字列が正しくデコードできない場合の例外処理
+        print(f"JSONDecodeError: {e}")
 
     print(memory.load_memory_variables({}))
 
@@ -265,6 +270,8 @@ Settings End;
         history.messages), indent=2, ensure_ascii=False)
 
     instance.body = messages  # モデルのフィールドに値を代入します。
+    print("savesavesave")
+    print(messages)
     instance.save()  # データベースに保存します。
 
     return result
@@ -304,6 +311,38 @@ def make_questions(base_message):
     selected_strings = random.sample(question_topick, 5)
     result_string = "\n".join(selected_strings)
 
+    history = ""
+    encoding: Encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+
+    try:
+        instance = BodyText.objects.get(id=1)  # 1はサンプルのIDです
+
+        saved_memory = json.loads(instance.body)
+        current_token = 0
+        for i in range(len(saved_memory) - 2, -1, -2):
+            human_item = saved_memory[i]
+            ai_item = saved_memory[i + 1]
+            # print('Human input:', human_item['data']['content'])
+            temp_history = ""
+            temp_history += "[AI]" + ai_item['data']['content'] + "\n"
+            temp_history += "[Human]" + human_item['data']['content'] + "\n"
+            tokens = encoding.encode(temp_history)
+            tokens_count = len(tokens)
+            print(f"{tokens_count=}")
+            print(temp_history)
+            if (2048 < tokens_count + current_token):
+                break
+            history = temp_history + history
+            current_token += tokens_count
+
+    except ObjectDoesNotExist:
+        instance = BodyText()  # 該当のIDが存在しない場合、新たなインスタンスを作成します。
+    except json.decoder.JSONDecodeError as e:
+        # JSON文字列が正しくデコードできない場合の例外処理
+        print(f"JSONDecodeError: {e}")
+
+    result_string = history
+
     json_string = """
 {
     "question" : ["質問文1","質問文2","質問文3"]
@@ -311,11 +350,13 @@ def make_questions(base_message):
 """
     template = """
 次のメッセージから質問文を３つ作成してください。
+坂本龍馬との会話を楽しむための返答分を3つ作成してください。
 データのフォーマットはjsonデータ形式で返してください
 フォーマット{json_string}
 
 メッセージ:{base_message}
 質問には以下の内容を含めながら行う
+返答文はこれまでの会話を踏まえて作成してください。
 {result_string}
         """
     print(template)
