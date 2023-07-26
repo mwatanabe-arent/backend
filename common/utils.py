@@ -359,7 +359,7 @@ def make_questions(base_message):
 メッセージ:{base_message}
 
 質問には以下の内容を含めながら行う
-返答文はこれまでの会話を踏まえて作成してください。
+返答文はこれまでの会話を踏まえたものや、坂本龍馬のストーリーを踏まえたものを作成してください。
 {result_string}
         """
     print(template)
