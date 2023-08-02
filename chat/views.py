@@ -44,7 +44,13 @@ def talkQuestion(request):
     message = request.GET.get('message', '')
     print(message)
     response = message_response(message)
-    questions = make_questions(response)
+    # questions = make_questions(response)
+    questions = """
+{
+    "question" : ["返答文1","返答文2","返答文3"]
+}
+"""
+
     retdata = {
         "message": response,
         "question_json": questions
